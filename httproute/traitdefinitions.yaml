@@ -1,0 +1,43 @@
+apiVersion: core.oam.dev/v1alpha2
+kind: TraitDefinition
+metadata:
+  annotations:
+    definition.oam.dev/description: Configures route to your app used by external URL.
+  name: httproute
+spec:
+  appliesToWorkloads:
+  - mpserver
+  definitionRef:
+    name: virtualservice.networking.istio.io
+  extension:
+    template: |
+      output: {
+        apiVersion: "networking.istio.io/v1beta1"
+        kind:       "VirtualService"
+        metadata: {
+          name: context.name
+        }
+        spec: {
+          gateways: parameter.gateways
+          hosts: parameter.hosts
+          http: [{
+            route: [{
+              destination: {
+                host: "\(context.name).\(parameter.servernamespace).svc.cluster.local"
+                port: {
+                  number: parameter.serverport
+                }
+              }
+            }]
+          }]
+        }
+      }
+
+      parameter: {
+        gateways: [...string]
+
+        hosts: [...string]
+
+        servernamespace: string
+        serverport: int
+      }
