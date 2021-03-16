@@ -3,7 +3,9 @@ services:
   my-hello-world:
     type: mpserver
     image: crccheck/hello-world
-    ports: [8000]
+    ports: 
+      - protocol: "http"
+        number: 8000
     cpu: "200m"
     env: 
       - name: regcred

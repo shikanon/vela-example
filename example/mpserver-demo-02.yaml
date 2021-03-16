@@ -17,7 +17,9 @@ services:
         value: test-deploy-zookeeper:2181
       - name: KAFKA_BROKER_ID
         value: "0"
-    ports: [9308]
+    ports: 
+      - protocol: "tcp"
+        number: 8000
     
   test-deploy-zookeeper: # zookeeper workload
     type: mpserver
@@ -29,4 +31,10 @@ services:
         value: "1"
       - name: ZOO_SERVERS
         value: 0.0.0.0:2888:3888
-    ports: [2181, 2888, 3888]
+    ports: 
+      - protocol: "tcp"
+        number: 2181
+      - protocol: "tcp"
+        number: 2888
+      - protocol: "tcp"
+        number: 3888

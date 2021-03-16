@@ -34,7 +34,7 @@ output: {
 					}
 
 					if parameter["env"] != _|_ {
-						env: parameter.env
+						env: parameter.env + [{name: "NAMESPACE", value: context.namespace}]
 					}
 
 					if parameter["configmap"] != _|_ {
@@ -48,7 +48,7 @@ output: {
 
 					ports: [
 						for k, v in parameter.ports {
-							containerPort: v
+							containerPort: v.number
 							protocol:      "TCP"
 						},
 					]
@@ -113,9 +113,9 @@ outputs: service: {
 		}
 		ports: [
 			for k, v in parameter.ports {
-				name:       "tcp-\(k)"
-				port:       v
-				targetPort: v
+				name:       "\(v.protocol)-\(v.number)"
+				port:       v.number
+				targetPort: v.number
 				protocol:   "TCP"
 			},
 		]
@@ -132,7 +132,7 @@ parameter: {
 
 	// +usage=Which port do you want customer traffic sent to
 	// +short=p
-	ports: [...int]
+	ports: [...{protocol: string, number: int}]
 	// +usage=Define arguments by using environment variables
 	env?: [...{
 		// +usage=Environment variable name
@@ -141,12 +141,12 @@ parameter: {
 		value?: string
 		// +usage=Specifies a source the value of this var should come from
 		valueFrom?: {
-			// +usage=Selects a key of a secret in the pod's namespace
-			secretKeyRef: {
-				// +usage=The name of the secret in the pod's namespace to select from
+			secretKeyRef?: {
 				name: string
-				// +usage=The key of the secret to select from. Must be a valid secret key
 				key: string
+			}
+			fieldRef?: {
+				fieldPath: string
 			}
 		}
 	}]

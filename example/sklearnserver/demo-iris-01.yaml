@@ -3,7 +3,9 @@ services:
   demo-iris:
     type: mpserver
     image: swr.cn-north-4.myhuaweicloud.com/hw-zt-k8s-images/sklearnserver:demo-iris
-    ports: [8080]
+    ports: 
+      - protocol: "http"
+        number: 8000
     cpu: "200m"
     memory: "250Mi"
     httproute:
