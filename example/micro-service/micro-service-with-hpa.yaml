@@ -1,0 +1,32 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: abtestdata
+spec:
+  components:
+    - name: jupyterhub-component-with-hpa
+      type: micro-service
+      properties:
+        image: jupyterhub/jupyterhub-demo:1.4
+        cmd: 
+          - jupyterhub
+          - --port=$(EXPORTPORT)
+        env:
+        - name: "EXPORTPORT"
+          value: "8888"
+        port:
+        - protocol: "http"
+          number: 8888
+        volumes:
+        - name: "jupyterhub-component-config"
+          mountPath: "/home/work/bin/abtestdata/"
+          type: "configMap"
+          cmName: "jupyterhub-component-config"
+      traits:
+      - type: scale-hpa
+        properties:
+          min: 1
+          max: 3
+          cpuPercent: 80
+          memoryPercent: 60
+          downscaleWindow: "30m"

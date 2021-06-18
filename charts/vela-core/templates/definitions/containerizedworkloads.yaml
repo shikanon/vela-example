@@ -1,7 +1,8 @@
-apiVersion: core.oam.dev/v1alpha2
+apiVersion: core.oam.dev/v1beta1
 kind: WorkloadDefinition
 metadata:
   name: containerizedworkloads.core.oam.dev
+  namespace: {{.Values.systemDefinitionNamespace}}
 spec:
   definitionRef:
     name: containerizedworkloads.core.oam.dev

@@ -107,20 +107,34 @@ spec:
           args:
             - "--metrics-addr=:8080"
             - "--enable-leader-election"
-            {{ if .Values.useWebhook }}
+            {{ if ne .Values.logFilePath "" }}
+            - "--log-file-path={{ .Values.logFilePath }}"
+            - "--log-file-max-size={{ .Values.logFileMaxSize }}"
+            {{ end }}
+            {{ if .Values.logDebug }}
+            - "--log-debug=true"
+            {{ end }}
+            {{ if .Values.admissionWebhooks.enabled }}
             - "--use-webhook=true"
             - "--webhook-port={{ .Values.webhookService.port }}"
-            - "--webhook-cert-dir={{ .Values.certificate.mountPath }}"
+            - "--webhook-cert-dir={{ .Values.admissionWebhooks.certificate.mountPath }}"
+            {{ end }}
+            {{ if not .Values.useAppConfig }}
+            - "--app-config-installed=false"
             {{ end }}
             - "--health-addr=:{{ .Values.healthCheck.port }}"
+            - "--apply-once-only={{ .Values.applyOnceOnly }}"
             {{ if ne .Values.disableCaps "" }}
             - "--disable-caps={{ .Values.disableCaps }}"
             {{ end }}
+            - "--system-definition-namespace={{ .Values.systemDefinitionNamespace }}"
+            - "--application-revision-limit={{ .Values.applicationRevisionLimit }}"
+            - "--definition-revision-limit={{ .Values.definitionRevisionLimit }}"
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ quote .Values.image.pullPolicy }}
           resources:
           {{- toYaml .Values.resources | nindent 12 }}
-          {{ if .Values.useWebhook }}
+          {{ if .Values.admissionWebhooks.enabled }}
           ports:
             - containerPort: {{ .Values.webhookService.port }}
               name: webhook-server
@@ -141,16 +155,16 @@ spec:
             initialDelaySeconds: 90
             periodSeconds: 5
           volumeMounts:
-            - mountPath: {{ .Values.certificate.mountPath }}
+            - mountPath: {{ .Values.admissionWebhooks.certificate.mountPath }}
               name: tls-cert-vol
               readOnly: true
           {{ end }}
-      {{ if .Values.useWebhook }}
+      {{ if .Values.admissionWebhooks.enabled }}
       volumes:
         - name: tls-cert-vol
           secret:
             defaultMode: 420
-            secretName: {{ .Values.certificate.secretName | quote }}
+            secretName: {{ template "kubevela.fullname" . }}-admission
       {{ end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

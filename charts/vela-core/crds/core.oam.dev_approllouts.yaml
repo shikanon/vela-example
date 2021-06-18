@@ -1,50 +1,39 @@
+
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: vela-system/kubevela-vela-core-root-cert
     controller-gen.kubebuilder.io/version: v0.2.4
-  name: applications.core.oam.dev
+  name: approllouts.core.oam.dev
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: vela-core-webhook
-          namespace: vela-system
-          path: /convert
-          port: 443
-      conversionReviewVersions:
-      - v1beta1
-      - v1alpha2
   group: core.oam.dev
   names:
     categories:
     - oam
-    kind: Application
-    listKind: ApplicationList
-    plural: applications
+    kind: AppRollout
+    listKind: AppRolloutList
+    plural: approllouts
     shortNames:
-    - app
-    singular: application
+    - approllout
+    singular: approllout
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.components[*].name
-      name: COMPONENT
+    - jsonPath: .status.rolloutStatus.rolloutTargetSize
+      name: TARGET
       type: string
-    - jsonPath: .spec.components[*].type
-      name: TYPE
+    - jsonPath: .status.rolloutStatus.upgradedReplicas
+      name: UPGRADED
       type: string
-    - jsonPath: .status.status
-      name: PHASE
+    - jsonPath: .status.rolloutStatus.upgradedReadyReplicas
+      name: READY
       type: string
-    - jsonPath: .status.services[*].healthy
-      name: HEALTHY
-      type: boolean
-    - jsonPath: .status.services[*].message
-      name: STATUS
+    - jsonPath: .status.rolloutStatus.batchRollingState
+      name: BATCH-STATE
+      type: string
+    - jsonPath: .status.rolloutStatus.rollingState
+      name: ROLLING-STATE
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -52,7 +41,7 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Application is the Schema for the applications API
+        description: AppRollout is the Schema for the AppRollout API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -63,46 +52,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: ApplicationSpec is the spec of Application
+            description: AppRolloutSpec defines how to describe an upgrade between different apps
             properties:
-              components:
+              componentList:
+                description: 'The list of component to upgrade in the application. We only support single component application so far TODO: (RZ) Support multiple components in an application'
                 items:
-                  description: ApplicationComponent describe the component of application
-                  properties:
-                    name:
-                      type: string
-                    scopes:
-                      additionalProperties:
-                        type: string
-                      description: scopes in ApplicationComponent defines the component-level scopes the format is <scope-type:scope-instance-name> pairs, the key represents type of `ScopeDefinition` while the value represent the name of scope instance.
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    settings:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    traits:
-                      description: Traits define the trait of one component, the type must be array to keep the order.
-                      items:
-                        description: ApplicationTrait defines the trait of application
-                        properties:
-                          name:
-                            type: string
-                          properties:
-                            type: object
-                            x-kubernetes-preserve-unknown-fields: true
-                        required:
-                        - name
-                        type: object
-                      type: array
-                    type:
-                      type: string
-                  required:
-                  - name
-                  - type
-                  type: object
+                  type: string
                 type: array
+              revertOnDelete:
+                description: RevertOnDelete revert the rollout when the rollout CR is deleted It will remove the target app from the kubernetes if it's set to true
+                type: boolean
               rolloutPlan:
-                description: RolloutPlan is the details on how to rollout the resources The controller simply replace the old resources with the new one if there is no rollout plan involved
+                description: RolloutPlan is the details on how to rollout the resources
                 properties:
                   batchPartition:
                     description: All pods in the batches up to the batchPartition (included) will have the target resource specification while the rest still have the source resource This is designed for the operators to manually rollout Default is the the number of batches which will rollout all the batches
@@ -319,35 +280,25 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              sourceAppRevisionName:
+                description: SourceAppRevisionName contains the name of the applicationRevision that we need to upgrade from. it can be empty only when the rolling is only a scale event
+                type: string
+              targetAppRevisionName:
+                description: TargetAppRevisionName contains the name of the applicationRevision that we need to upgrade to.
+                type: string
             required:
-            - components
+            - rolloutPlan
+            - targetAppRevisionName
             type: object
           status:
-            description: AppStatus defines the observed state of Application
+            description: AppRolloutStatus defines the observed state of AppRollout
             properties:
-              components:
-                description: Components record the related Components created by Application Controller
-                items:
-                  description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
-                  properties:
-                    apiVersion:
-                      description: APIVersion of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name of the referenced object.
-                      type: string
-                    uid:
-                      description: UID of the referenced object.
-                      type: string
-                  required:
-                  - apiVersion
-                  - kind
-                  - name
-                  type: object
-                type: array
+              LastSourceAppRevision:
+                description: LastSourceAppRevision contains the name of the app that we need to upgrade from. We will restart the rollout if this is not the same as the spec
+                type: string
+              batchRollingState:
+                description: BatchRollingState only meaningful when the Status is rolling
+                type: string
               conditions:
                 description: Conditions of the resource.
                 items:
@@ -376,184 +327,44 @@ spec:
                   - type
                   type: object
                 type: array
-              latestRevision:
-                description: LatestRevision of the application configuration it generates
-                properties:
-                  name:
-                    type: string
-                  revision:
-                    format: int64
-                    type: integer
-                  revisionHash:
-                    description: RevisionHash record the hash value of the spec of ApplicationRevision object.
-                    type: string
-                required:
-                - name
-                - revision
-                type: object
-              resourceTracker:
-                description: ResourceTracker record the status of the ResourceTracker
-                properties:
-                  apiVersion:
-                    description: APIVersion of the referenced object.
-                    type: string
-                  kind:
-                    description: Kind of the referenced object.
-                    type: string
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                  uid:
-                    description: UID of the referenced object.
-                    type: string
-                required:
-                - apiVersion
-                - kind
-                - name
-                type: object
-              rollout:
-                description: AppRolloutStatus defines the observed state of AppRollout
-                properties:
-                  LastSourceAppRevision:
-                    description: LastSourceAppRevision contains the name of the app that we need to upgrade from. We will restart the rollout if this is not the same as the spec
-                    type: string
-                  batchRollingState:
-                    description: BatchRollingState only meaningful when the Status is rolling
-                    type: string
-                  conditions:
-                    description: Conditions of the resource.
-                    items:
-                      description: A Condition that may apply to a resource.
-                      properties:
-                        lastTransitionTime:
-                          description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                          format: date-time
-                          type: string
-                        message:
-                          description: A Message containing details about this condition's last transition from one status to another, if any.
-                          type: string
-                        reason:
-                          description: A Reason for this condition's last transition from one status to another.
-                          type: string
-                        status:
-                          description: Status of this condition; is it currently True, False, or Unknown?
-                          type: string
-                        type:
-                          description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
-                          type: string
-                      required:
-                      - lastTransitionTime
-                      - reason
-                      - status
-                      - type
-                      type: object
-                    type: array
-                  currentBatch:
-                    description: The current batch the rollout is working on/blocked it starts from 0
-                    format: int32
-                    type: integer
-                  lastAppliedPodTemplateIdentifier:
-                    description: lastAppliedPodTemplateIdentifier is a string that uniquely represent the last pod template each workload type could use different ways to identify that so we cannot compare between resources We update this field only after a successful rollout
-                    type: string
-                  lastTargetAppRevision:
-                    description: LastUpgradedTargetAppRevision contains the name of the app that we upgraded to We will restart the rollout if this is not the same as the spec
-                    type: string
-                  rollingState:
-                    description: RollingState is the Rollout State
-                    type: string
-                  rolloutOriginalSize:
-                    description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
-                    format: int32
-                    type: integer
-                  rolloutTargetSize:
-                    description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
-                    format: int32
-                    type: integer
-                  targetGeneration:
-                    description: NewPodTemplateIdentifier is a string that uniquely represent the new pod template each workload type could use different ways to identify that so we cannot compare between resources
-                    type: string
-                  upgradedReadyReplicas:
-                    description: UpgradedReadyReplicas is the number of Pods upgraded by the rollout controller that have a Ready Condition.
-                    format: int32
-                    type: integer
-                  upgradedReplicas:
-                    description: UpgradedReplicas is the number of Pods upgraded by the rollout controller
-                    format: int32
-                    type: integer
-                required:
-                - currentBatch
-                - lastTargetAppRevision
-                - rollingState
-                - upgradedReadyReplicas
-                - upgradedReplicas
-                type: object
-              services:
-                description: Services record the status of the application services
-                items:
-                  description: ApplicationComponentStatus record the health status of App component
-                  properties:
-                    healthy:
-                      type: boolean
-                    message:
-                      type: string
-                    name:
-                      type: string
-                    scopes:
-                      items:
-                        description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
-                        properties:
-                          apiVersion:
-                            description: APIVersion of the referenced object.
-                            type: string
-                          kind:
-                            description: Kind of the referenced object.
-                            type: string
-                          name:
-                            description: Name of the referenced object.
-                            type: string
-                          uid:
-                            description: UID of the referenced object.
-                            type: string
-                        required:
-                        - apiVersion
-                        - kind
-                        - name
-                        type: object
-                      type: array
-                    traits:
-                      items:
-                        description: ApplicationTraitStatus records the trait health status
-                        properties:
-                          healthy:
-                            type: boolean
-                          message:
-                            type: string
-                          type:
-                            type: string
-                        required:
-                        - healthy
-                        - type
-                        type: object
-                      type: array
-                    workloadDefinition:
-                      description: WorkloadDefinition is the definition of a WorkloadDefinition, such as deployments/apps.v1
-                      properties:
-                        apiVersion:
-                          type: string
-                        kind:
-                          type: string
-                      required:
-                      - apiVersion
-                      - kind
-                      type: object
-                  required:
-                  - healthy
-                  - name
-                  type: object
-                type: array
-              status:
-                description: ApplicationPhase is a label for the condition of a application at the current time
+              currentBatch:
+                description: The current batch the rollout is working on/blocked it starts from 0
+                format: int32
+                type: integer
+              lastAppliedPodTemplateIdentifier:
+                description: lastAppliedPodTemplateIdentifier is a string that uniquely represent the last pod template each workload type could use different ways to identify that so we cannot compare between resources We update this field only after a successful rollout
                 type: string
+              lastTargetAppRevision:
+                description: LastUpgradedTargetAppRevision contains the name of the app that we upgraded to We will restart the rollout if this is not the same as the spec
+                type: string
+              rollingState:
+                description: RollingState is the Rollout State
+                type: string
+              rolloutOriginalSize:
+                description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
+                format: int32
+                type: integer
+              rolloutTargetSize:
+                description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
+                format: int32
+                type: integer
+              targetGeneration:
+                description: NewPodTemplateIdentifier is a string that uniquely represent the new pod template each workload type could use different ways to identify that so we cannot compare between resources
+                type: string
+              upgradedReadyReplicas:
+                description: UpgradedReadyReplicas is the number of Pods upgraded by the rollout controller that have a Ready Condition.
+                format: int32
+                type: integer
+              upgradedReplicas:
+                description: UpgradedReplicas is the number of Pods upgraded by the rollout controller
+                format: int32
+                type: integer
+            required:
+            - currentBatch
+            - lastTargetAppRevision
+            - rollingState
+            - upgradedReadyReplicas
+            - upgradedReplicas
             type: object
         type: object
     served: true
@@ -561,20 +372,20 @@ spec:
     subresources:
       status: {}
   - additionalPrinterColumns:
-    - jsonPath: .spec.components[*].name
-      name: COMPONENT
+    - jsonPath: .status.rolloutTargetSize
+      name: TARGET
       type: string
-    - jsonPath: .spec.components[*].type
-      name: TYPE
+    - jsonPath: .status.upgradedReplicas
+      name: UPGRADED
       type: string
-    - jsonPath: .status.status
-      name: PHASE
+    - jsonPath: .status.upgradedReadyReplicas
+      name: READY
       type: string
-    - jsonPath: .status.services[*].healthy
-      name: HEALTHY
-      type: boolean
-    - jsonPath: .status.services[*].message
-      name: STATUS
+    - jsonPath: .status.batchRollingState
+      name: BATCH-STATE
+      type: string
+    - jsonPath: .status.rollingState
+      name: ROLLING-STATE
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -582,7 +393,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Application is the Schema for the applications API
+        description: AppRollout is the Schema for the AppRollout API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -593,46 +404,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: ApplicationSpec is the spec of Application
+            description: AppRolloutSpec defines how to describe an upgrade between different apps
             properties:
-              components:
+              componentList:
+                description: 'The list of component to upgrade in the application. We only support single component application so far TODO: (RZ) Support multiple components in an application'
                 items:
-                  description: ApplicationComponent describe the component of application
-                  properties:
-                    name:
-                      type: string
-                    properties:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    scopes:
-                      additionalProperties:
-                        type: string
-                      description: scopes in ApplicationComponent defines the component-level scopes the format is <scope-type:scope-instance-name> pairs, the key represents type of `ScopeDefinition` while the value represent the name of scope instance.
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    traits:
-                      description: Traits define the trait of one component, the type must be array to keep the order.
-                      items:
-                        description: ApplicationTrait defines the trait of application
-                        properties:
-                          properties:
-                            type: object
-                            x-kubernetes-preserve-unknown-fields: true
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      type: array
-                    type:
-                      type: string
-                  required:
-                  - name
-                  - type
-                  type: object
+                  type: string
                 type: array
+              revertOnDelete:
+                description: RevertOnDelete revert the failed rollout when the rollout CR is deleted It will revert the change back to the source version at once (not in batches) Default is false
+                type: boolean
               rolloutPlan:
-                description: RolloutPlan is the details on how to rollout the resources The controller simply replace the old resources with the new one if there is no rollout plan involved
+                description: RolloutPlan is the details on how to rollout the resources
                 properties:
                   batchPartition:
                     description: All pods in the batches up to the batchPartition (included) will have the target resource specification while the rest still have the source resource This is designed for the operators to manually rollout Default is the the number of batches which will rollout all the batches
@@ -849,35 +632,25 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              sourceAppRevisionName:
+                description: SourceAppRevisionName contains the name of the applicationConfiguration that we need to upgrade from. it can be empty only when it's the first time to deploy the application
+                type: string
+              targetAppRevisionName:
+                description: TargetAppRevisionName contains the name of the applicationConfiguration that we need to upgrade to. Here we use an applicationConfiguration as a revision of an application, thus the name alone is suffice
+                type: string
             required:
-            - components
+            - rolloutPlan
+            - targetAppRevisionName
             type: object
           status:
-            description: AppStatus defines the observed state of Application
+            description: AppRolloutStatus defines the observed state of AppRollout
             properties:
-              components:
-                description: Components record the related Components created by Application Controller
-                items:
-                  description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
-                  properties:
-                    apiVersion:
-                      description: APIVersion of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name of the referenced object.
-                      type: string
-                    uid:
-                      description: UID of the referenced object.
-                      type: string
-                  required:
-                  - apiVersion
-                  - kind
-                  - name
-                  type: object
-                type: array
+              LastSourceAppRevision:
+                description: LastSourceAppRevision contains the name of the app that we need to upgrade from. We will restart the rollout if this is not the same as the spec
+                type: string
+              batchRollingState:
+                description: BatchRollingState only meaningful when the Status is rolling
+                type: string
               conditions:
                 description: Conditions of the resource.
                 items:
@@ -906,184 +679,44 @@ spec:
                   - type
                   type: object
                 type: array
-              latestRevision:
-                description: LatestRevision of the application configuration it generates
-                properties:
-                  name:
-                    type: string
-                  revision:
-                    format: int64
-                    type: integer
-                  revisionHash:
-                    description: RevisionHash record the hash value of the spec of ApplicationRevision object.
-                    type: string
-                required:
-                - name
-                - revision
-                type: object
-              resourceTracker:
-                description: ResourceTracker record the status of the ResourceTracker
-                properties:
-                  apiVersion:
-                    description: APIVersion of the referenced object.
-                    type: string
-                  kind:
-                    description: Kind of the referenced object.
-                    type: string
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                  uid:
-                    description: UID of the referenced object.
-                    type: string
-                required:
-                - apiVersion
-                - kind
-                - name
-                type: object
-              rollout:
-                description: AppRolloutStatus defines the observed state of AppRollout
-                properties:
-                  LastSourceAppRevision:
-                    description: LastSourceAppRevision contains the name of the app that we need to upgrade from. We will restart the rollout if this is not the same as the spec
-                    type: string
-                  batchRollingState:
-                    description: BatchRollingState only meaningful when the Status is rolling
-                    type: string
-                  conditions:
-                    description: Conditions of the resource.
-                    items:
-                      description: A Condition that may apply to a resource.
-                      properties:
-                        lastTransitionTime:
-                          description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                          format: date-time
-                          type: string
-                        message:
-                          description: A Message containing details about this condition's last transition from one status to another, if any.
-                          type: string
-                        reason:
-                          description: A Reason for this condition's last transition from one status to another.
-                          type: string
-                        status:
-                          description: Status of this condition; is it currently True, False, or Unknown?
-                          type: string
-                        type:
-                          description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
-                          type: string
-                      required:
-                      - lastTransitionTime
-                      - reason
-                      - status
-                      - type
-                      type: object
-                    type: array
-                  currentBatch:
-                    description: The current batch the rollout is working on/blocked it starts from 0
-                    format: int32
-                    type: integer
-                  lastAppliedPodTemplateIdentifier:
-                    description: lastAppliedPodTemplateIdentifier is a string that uniquely represent the last pod template each workload type could use different ways to identify that so we cannot compare between resources We update this field only after a successful rollout
-                    type: string
-                  lastTargetAppRevision:
-                    description: LastUpgradedTargetAppRevision contains the name of the app that we upgraded to We will restart the rollout if this is not the same as the spec
-                    type: string
-                  rollingState:
-                    description: RollingState is the Rollout State
-                    type: string
-                  rolloutOriginalSize:
-                    description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
-                    format: int32
-                    type: integer
-                  rolloutTargetSize:
-                    description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
-                    format: int32
-                    type: integer
-                  targetGeneration:
-                    description: NewPodTemplateIdentifier is a string that uniquely represent the new pod template each workload type could use different ways to identify that so we cannot compare between resources
-                    type: string
-                  upgradedReadyReplicas:
-                    description: UpgradedReadyReplicas is the number of Pods upgraded by the rollout controller that have a Ready Condition.
-                    format: int32
-                    type: integer
-                  upgradedReplicas:
-                    description: UpgradedReplicas is the number of Pods upgraded by the rollout controller
-                    format: int32
-                    type: integer
-                required:
-                - currentBatch
-                - lastTargetAppRevision
-                - rollingState
-                - upgradedReadyReplicas
-                - upgradedReplicas
-                type: object
-              services:
-                description: Services record the status of the application services
-                items:
-                  description: ApplicationComponentStatus record the health status of App component
-                  properties:
-                    healthy:
-                      type: boolean
-                    message:
-                      type: string
-                    name:
-                      type: string
-                    scopes:
-                      items:
-                        description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
-                        properties:
-                          apiVersion:
-                            description: APIVersion of the referenced object.
-                            type: string
-                          kind:
-                            description: Kind of the referenced object.
-                            type: string
-                          name:
-                            description: Name of the referenced object.
-                            type: string
-                          uid:
-                            description: UID of the referenced object.
-                            type: string
-                        required:
-                        - apiVersion
-                        - kind
-                        - name
-                        type: object
-                      type: array
-                    traits:
-                      items:
-                        description: ApplicationTraitStatus records the trait health status
-                        properties:
-                          healthy:
-                            type: boolean
-                          message:
-                            type: string
-                          type:
-                            type: string
-                        required:
-                        - healthy
-                        - type
-                        type: object
-                      type: array
-                    workloadDefinition:
-                      description: WorkloadDefinition is the definition of a WorkloadDefinition, such as deployments/apps.v1
-                      properties:
-                        apiVersion:
-                          type: string
-                        kind:
-                          type: string
-                      required:
-                      - apiVersion
-                      - kind
-                      type: object
-                  required:
-                  - healthy
-                  - name
-                  type: object
-                type: array
-              status:
-                description: ApplicationPhase is a label for the condition of a application at the current time
+              currentBatch:
+                description: The current batch the rollout is working on/blocked it starts from 0
+                format: int32
+                type: integer
+              lastAppliedPodTemplateIdentifier:
+                description: lastAppliedPodTemplateIdentifier is a string that uniquely represent the last pod template each workload type could use different ways to identify that so we cannot compare between resources We update this field only after a successful rollout
                 type: string
+              lastTargetAppRevision:
+                description: LastUpgradedTargetAppRevision contains the name of the app that we upgraded to We will restart the rollout if this is not the same as the spec
+                type: string
+              rollingState:
+                description: RollingState is the Rollout State
+                type: string
+              rolloutOriginalSize:
+                description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
+                format: int32
+                type: integer
+              rolloutTargetSize:
+                description: RolloutTargetSize is the size of the target resources. This is determined once the initial spec verification and does not change until the rollout is restarted
+                format: int32
+                type: integer
+              targetGeneration:
+                description: NewPodTemplateIdentifier is a string that uniquely represent the new pod template each workload type could use different ways to identify that so we cannot compare between resources
+                type: string
+              upgradedReadyReplicas:
+                description: UpgradedReadyReplicas is the number of Pods upgraded by the rollout controller that have a Ready Condition.
+                format: int32
+                type: integer
+              upgradedReplicas:
+                description: UpgradedReplicas is the number of Pods upgraded by the rollout controller
+                format: int32
+                type: integer
+            required:
+            - currentBatch
+            - lastTargetAppRevision
+            - rollingState
+            - upgradedReadyReplicas
+            - upgradedReplicas
             type: object
         type: object
     served: true

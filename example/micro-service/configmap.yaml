@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  jupyterhub_config.py: |
+    c = get_config()
+    # Use DummyAuthenticator and SimpleSpawner
+    c.JupyterHub.spawner_class = "simple"
+    c.JupyterHub.authenticator_class = "dummy"
+kind: ConfigMap
+metadata:
+  name: jupyterhub-component-config

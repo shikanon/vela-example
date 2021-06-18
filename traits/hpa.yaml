@@ -1,0 +1,66 @@
+
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: scale-hpa
+  namespace: vela-system
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  schematic:
+    cue:
+      template: |
+        import "encoding/json"
+
+        outputs: huaweihpa: {
+          apiVersion: "autoscaling/v1"
+          kind:       "HorizontalPodAutoscaler"
+          metadata: {
+            name: context.name
+            labels: {
+              app: context.name
+            }
+            annotations: {
+              if parameter["memoryPercent"] != _|_{
+                  "autoscaling.alpha.kubernetes.io/metrics": "[\(json.Marshal(memory_metrics))]"
+              }
+              "extendedhpa.option": "[\(json.Marshal(huawei_extendhpa))]"
+            }
+          }
+          spec: {
+            minReplicas:                    parameter.min
+            maxReplicas:                    parameter.max
+            if parameter["cpuPercent"] != _|_{
+              targetCPUUtilizationPercentage: parameter.cpuPercent
+            }
+            scaleTargetRef: {
+              apiVersion: "apps/v1"
+              kind:       "Deployment"
+              name:       context.name
+            }
+          }
+        }
+        memory_metrics = {
+            "type":"Resource",
+            "resource":{
+              "name":"memory",
+              "targetAverageUtilization": *60 | parameter.memoryPercent
+              }
+            }
+        huawei_extendhpa = {
+            "downscaleWindow": *"30m" | parameter.downscaleWindow,
+            "upscaleWindow": *"5m" | parameter.upscaleWindow
+          }
+        parameter: {
+          // +usage=How smallest the replica of your application
+          min:             *1 | >=1 & int
+          // +usage=How largest the replica of your application
+          max:             *1 | >=1 & int & >= min
+          // +usage=Expect the percent of cpu when your application run in k8s
+          cpuPercent?:      >0 & int & < 100
+          // +usage=Expect the percent of memory when your application run in k8s
+          memoryPercent?:   >0 & int & < 100
+          downscaleWindow?: string
+          upscaleWindow?: string
+        }
+

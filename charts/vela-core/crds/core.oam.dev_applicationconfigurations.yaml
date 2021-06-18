@@ -5,13 +5,11 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
-  creationTimestamp: null
   name: applicationconfigurations.core.oam.dev
 spec:
   group: core.oam.dev
   names:
     categories:
-    - crossplane
     - oam
     kind: ApplicationConfiguration
     listKind: ApplicationConfigurationList
@@ -50,6 +48,111 @@ spec:
                       items:
                         description: DataInput specifies a data input sink to an object. If input is array, it will be appended to the target field paths.
                         properties:
+                          conditions:
+                            description: When the Conditions is satified, ToFieldPaths will be filled with passed value
+                            items:
+                              description: ConditionRequirement specifies the requirement to match a value.
+                              properties:
+                                fieldPath:
+                                  description: FieldPath specifies got value from workload/trait object
+                                  type: string
+                                op:
+                                  description: ConditionOperator specifies the operator to match a value.
+                                  type: string
+                                value:
+                                  description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                  type: string
+                                valueFrom:
+                                  description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                  properties:
+                                    fieldPath:
+                                      type: string
+                                  required:
+                                  - fieldPath
+                                  type: object
+                              required:
+                              - op
+                              type: object
+                            type: array
+                          inputStore:
+                            description: InputStore specifies the object used to read intermediate data genereted by DataOutput
+                            properties:
+                              apiVersion:
+                                description: APIVersion of the referenced object.
+                                type: string
+                              kind:
+                                description: Kind of the referenced object.
+                                type: string
+                              name:
+                                description: Name of the referenced object.
+                                type: string
+                              operations:
+                                description: Operations specify the data processing operations
+                                items:
+                                  description: DataOperation defines the specific operation for data
+                                  properties:
+                                    conditions:
+                                      items:
+                                        description: ConditionRequirement specifies the requirement to match a value.
+                                        properties:
+                                          fieldPath:
+                                            description: FieldPath specifies got value from workload/trait object
+                                            type: string
+                                          op:
+                                            description: ConditionOperator specifies the operator to match a value.
+                                            type: string
+                                          value:
+                                            description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                            type: string
+                                          valueFrom:
+                                            description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                            properties:
+                                              fieldPath:
+                                                type: string
+                                            required:
+                                            - fieldPath
+                                            type: object
+                                        required:
+                                        - op
+                                        type: object
+                                      type: array
+                                    op:
+                                      description: Operator specifies the operation under this DataOperation type
+                                      type: string
+                                    toDataPath:
+                                      description: ToDataPath refers to the value of an object's specfied by ToDataPath. For example the ToDataPath "redis" specifies "redis info" in '{"redis":"redis info"}'
+                                      type: string
+                                    toFieldPath:
+                                      description: ToFieldPath refers to the value of an object's field
+                                      type: string
+                                    type:
+                                      description: Type specifies the type of DataOperation
+                                      type: string
+                                    value:
+                                      description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                      type: string
+                                    valueFrom:
+                                      description: ValueFrom specifies expected value from object such as workload and trait This is mutually exclusive with Value
+                                      properties:
+                                        fieldPath:
+                                          type: string
+                                      required:
+                                      - fieldPath
+                                      type: object
+                                  required:
+                                  - op
+                                  - toFieldPath
+                                  - type
+                                  type: object
+                                type: array
+                              uid:
+                                description: UID of the referenced object.
+                                type: string
+                            required:
+                            - apiVersion
+                            - kind
+                            - name
+                            type: object
                           strategyMergeKeys:
                             description: StrategyMergeKeys specifies the merge key if the toFieldPaths target is an array. The StrategyMergeKeys is optional, by default, if the toFieldPaths target is an array, we will append. If StrategyMergeKeys specified, we will check the key in the target array. If any key exist, do update; if no key exist, append.
                             items:
@@ -108,6 +211,85 @@ spec:
                           name:
                             description: Name is the unique name of a DataOutput in an ApplicationConfiguration.
                             type: string
+                          outputStore:
+                            description: OutputStore specifies the object used to store intermediate data generated by Operations
+                            properties:
+                              apiVersion:
+                                description: APIVersion of the referenced object.
+                                type: string
+                              kind:
+                                description: Kind of the referenced object.
+                                type: string
+                              name:
+                                description: Name of the referenced object.
+                                type: string
+                              operations:
+                                description: Operations specify the data processing operations
+                                items:
+                                  description: DataOperation defines the specific operation for data
+                                  properties:
+                                    conditions:
+                                      items:
+                                        description: ConditionRequirement specifies the requirement to match a value.
+                                        properties:
+                                          fieldPath:
+                                            description: FieldPath specifies got value from workload/trait object
+                                            type: string
+                                          op:
+                                            description: ConditionOperator specifies the operator to match a value.
+                                            type: string
+                                          value:
+                                            description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                            type: string
+                                          valueFrom:
+                                            description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                            properties:
+                                              fieldPath:
+                                                type: string
+                                            required:
+                                            - fieldPath
+                                            type: object
+                                        required:
+                                        - op
+                                        type: object
+                                      type: array
+                                    op:
+                                      description: Operator specifies the operation under this DataOperation type
+                                      type: string
+                                    toDataPath:
+                                      description: ToDataPath refers to the value of an object's specfied by ToDataPath. For example the ToDataPath "redis" specifies "redis info" in '{"redis":"redis info"}'
+                                      type: string
+                                    toFieldPath:
+                                      description: ToFieldPath refers to the value of an object's field
+                                      type: string
+                                    type:
+                                      description: Type specifies the type of DataOperation
+                                      type: string
+                                    value:
+                                      description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                      type: string
+                                    valueFrom:
+                                      description: ValueFrom specifies expected value from object such as workload and trait This is mutually exclusive with Value
+                                      properties:
+                                        fieldPath:
+                                          type: string
+                                      required:
+                                      - fieldPath
+                                      type: object
+                                  required:
+                                  - op
+                                  - toFieldPath
+                                  - type
+                                  type: object
+                                type: array
+                              uid:
+                                description: UID of the referenced object.
+                                type: string
+                            required:
+                            - apiVersion
+                            - kind
+                            - name
+                            type: object
                         type: object
                       type: array
                     parameterValues:
@@ -171,6 +353,111 @@ spec:
                             items:
                               description: DataInput specifies a data input sink to an object. If input is array, it will be appended to the target field paths.
                               properties:
+                                conditions:
+                                  description: When the Conditions is satified, ToFieldPaths will be filled with passed value
+                                  items:
+                                    description: ConditionRequirement specifies the requirement to match a value.
+                                    properties:
+                                      fieldPath:
+                                        description: FieldPath specifies got value from workload/trait object
+                                        type: string
+                                      op:
+                                        description: ConditionOperator specifies the operator to match a value.
+                                        type: string
+                                      value:
+                                        description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                        type: string
+                                      valueFrom:
+                                        description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                        properties:
+                                          fieldPath:
+                                            type: string
+                                        required:
+                                        - fieldPath
+                                        type: object
+                                    required:
+                                    - op
+                                    type: object
+                                  type: array
+                                inputStore:
+                                  description: InputStore specifies the object used to read intermediate data genereted by DataOutput
+                                  properties:
+                                    apiVersion:
+                                      description: APIVersion of the referenced object.
+                                      type: string
+                                    kind:
+                                      description: Kind of the referenced object.
+                                      type: string
+                                    name:
+                                      description: Name of the referenced object.
+                                      type: string
+                                    operations:
+                                      description: Operations specify the data processing operations
+                                      items:
+                                        description: DataOperation defines the specific operation for data
+                                        properties:
+                                          conditions:
+                                            items:
+                                              description: ConditionRequirement specifies the requirement to match a value.
+                                              properties:
+                                                fieldPath:
+                                                  description: FieldPath specifies got value from workload/trait object
+                                                  type: string
+                                                op:
+                                                  description: ConditionOperator specifies the operator to match a value.
+                                                  type: string
+                                                value:
+                                                  description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                                  type: string
+                                                valueFrom:
+                                                  description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                                  properties:
+                                                    fieldPath:
+                                                      type: string
+                                                  required:
+                                                  - fieldPath
+                                                  type: object
+                                              required:
+                                              - op
+                                              type: object
+                                            type: array
+                                          op:
+                                            description: Operator specifies the operation under this DataOperation type
+                                            type: string
+                                          toDataPath:
+                                            description: ToDataPath refers to the value of an object's specfied by ToDataPath. For example the ToDataPath "redis" specifies "redis info" in '{"redis":"redis info"}'
+                                            type: string
+                                          toFieldPath:
+                                            description: ToFieldPath refers to the value of an object's field
+                                            type: string
+                                          type:
+                                            description: Type specifies the type of DataOperation
+                                            type: string
+                                          value:
+                                            description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                            type: string
+                                          valueFrom:
+                                            description: ValueFrom specifies expected value from object such as workload and trait This is mutually exclusive with Value
+                                            properties:
+                                              fieldPath:
+                                                type: string
+                                            required:
+                                            - fieldPath
+                                            type: object
+                                        required:
+                                        - op
+                                        - toFieldPath
+                                        - type
+                                        type: object
+                                      type: array
+                                    uid:
+                                      description: UID of the referenced object.
+                                      type: string
+                                  required:
+                                  - apiVersion
+                                  - kind
+                                  - name
+                                  type: object
                                 strategyMergeKeys:
                                   description: StrategyMergeKeys specifies the merge key if the toFieldPaths target is an array. The StrategyMergeKeys is optional, by default, if the toFieldPaths target is an array, we will append. If StrategyMergeKeys specified, we will check the key in the target array. If any key exist, do update; if no key exist, append.
                                   items:
@@ -229,6 +516,85 @@ spec:
                                 name:
                                   description: Name is the unique name of a DataOutput in an ApplicationConfiguration.
                                   type: string
+                                outputStore:
+                                  description: OutputStore specifies the object used to store intermediate data generated by Operations
+                                  properties:
+                                    apiVersion:
+                                      description: APIVersion of the referenced object.
+                                      type: string
+                                    kind:
+                                      description: Kind of the referenced object.
+                                      type: string
+                                    name:
+                                      description: Name of the referenced object.
+                                      type: string
+                                    operations:
+                                      description: Operations specify the data processing operations
+                                      items:
+                                        description: DataOperation defines the specific operation for data
+                                        properties:
+                                          conditions:
+                                            items:
+                                              description: ConditionRequirement specifies the requirement to match a value.
+                                              properties:
+                                                fieldPath:
+                                                  description: FieldPath specifies got value from workload/trait object
+                                                  type: string
+                                                op:
+                                                  description: ConditionOperator specifies the operator to match a value.
+                                                  type: string
+                                                value:
+                                                  description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                                  type: string
+                                                valueFrom:
+                                                  description: ValueFrom specifies expected value from AppConfig This is mutually exclusive with Value
+                                                  properties:
+                                                    fieldPath:
+                                                      type: string
+                                                  required:
+                                                  - fieldPath
+                                                  type: object
+                                              required:
+                                              - op
+                                              type: object
+                                            type: array
+                                          op:
+                                            description: Operator specifies the operation under this DataOperation type
+                                            type: string
+                                          toDataPath:
+                                            description: ToDataPath refers to the value of an object's specfied by ToDataPath. For example the ToDataPath "redis" specifies "redis info" in '{"redis":"redis info"}'
+                                            type: string
+                                          toFieldPath:
+                                            description: ToFieldPath refers to the value of an object's field
+                                            type: string
+                                          type:
+                                            description: Type specifies the type of DataOperation
+                                            type: string
+                                          value:
+                                            description: Value specifies an expected value This is mutually exclusive with ValueFrom
+                                            type: string
+                                          valueFrom:
+                                            description: ValueFrom specifies expected value from object such as workload and trait This is mutually exclusive with Value
+                                            properties:
+                                              fieldPath:
+                                                type: string
+                                            required:
+                                            - fieldPath
+                                            type: object
+                                        required:
+                                        - op
+                                        - toFieldPath
+                                        - type
+                                        type: object
+                                      type: array
+                                    uid:
+                                      description: UID of the referenced object.
+                                      type: string
+                                  required:
+                                  - apiVersion
+                                  - kind
+                                  - name
+                                  type: object
                               type: object
                             type: array
                           trait:
@@ -372,6 +738,9 @@ spec:
                 description: The generation observed by the appConfig controller.
                 format: int64
                 type: integer
+              rollingStatus:
+                description: RollingStatus indicates what phase are we in the rollout phase
+                type: string
               status:
                 description: Status is a place holder for a customized controller to fill if it needs a single place to summarize the status of the entire application
                 type: string
@@ -380,12 +749,18 @@ spec:
                 items:
                   description: A WorkloadStatus represents the status of a workload.
                   properties:
+                    appliedComponentRevision:
+                      description: AppliedComponentRevision indicates the applied component revision name of this workload
+                      type: string
                     componentName:
                       description: ComponentName that produced this workload.
                       type: string
                     componentRevisionName:
                       description: ComponentRevisionName of current component
                       type: string
+                    dependencyUnsatisfied:
+                      description: DependencyUnsatisfied notify does the workload has dependency unsatisfied
+                      type: boolean
                     scopes:
                       description: Scopes associated with this workload.
                       items:
@@ -426,6 +801,13 @@ spec:
                       items:
                         description: A WorkloadTrait represents a trait associated with a workload and its status
                         properties:
+                          appliedGeneration:
+                            description: AppliedGeneration indicates the generation observed by the appConfig controller. The same field is also recorded in the annotations of traits. A trait is possible to be deleted from cluster after created. This field is useful to track the observed generation of traits after they are deleted.
+                            format: int64
+                            type: integer
+                          dependencyUnsatisfied:
+                            description: DependencyUnsatisfied notify does the trait has dependency unsatisfied
+                            type: boolean
                           message:
                             description: Message will allow controller to leave some additional information for this trait
                             type: string

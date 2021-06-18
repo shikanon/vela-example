@@ -1,0 +1,54 @@
+
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: ingressgateway
+  namespace: vela-system
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  schematic:
+    cue:
+      template: |
+        outputs: virtualservice: {
+          apiVersion: "networking.istio.io/v1beta1"
+          kind:       "VirtualService"
+          metadata: {
+            name: context.name
+          }
+          spec: {
+            gateways: [parameter.gateway]
+            hosts: parameter.hosts
+            if parameter.protocol == "tcp" {
+              tcp: [{
+                match: [{
+                  port: parameter.gatewayport
+                }]
+                route: [{
+                  destination: {
+                    host: "\(context.name).\(context.namespace).svc.cluster.local"
+                    port: number: parameter.exportport
+                  }
+                }]
+              }]
+            }
+            if parameter.protocol != "tcp" {
+              http: [{
+                route: [{
+                  destination: {
+                    host: "\(context.name).\(context.namespace).svc.cluster.local"
+                    port: number: parameter.exportport
+                  }
+                }]
+              }]
+            }
+          }
+        }
+        parameter: {
+          gateway: string
+          hosts: [...string]
+          exportport: int
+          protocol: *"http" | string
+          gatewayport?: *80 | int
+        }
+

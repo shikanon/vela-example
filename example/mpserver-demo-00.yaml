@@ -1,9 +1,0 @@
-name: mpserver-demo-00
-services:
-  mpserver-test:
-    type: mpserver
-    image: crccheck/hello-world
-    ports: 
-      - protocol: "http"
-        number: 8000
-    cpu: "200m"

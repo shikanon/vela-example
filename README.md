@@ -2,14 +2,16 @@
 
 some workload and traits for vela, like hpa, istio virtualserver etc.
 
-only use by vela-core v0.3.2
+the charts is vela-core v1.0.5
 
-## Workloads
+## Install of kubevela
 
-mpserver: A service and deployment for long time running.
+```bash
+helm install -n vela-system kubevela charts/vela-core
+```
 
+## Components
 
-## Traits
+micro-service: A service and deployment for long time running.
+serverless: the comba of deployment, service and istio virtualservice.
 
-hpa: A hpa for mpserver deployment
-httproute: use istio virtualservice
