@@ -1,7 +1,7 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: abtestdata
+  name: jupyterhub-component-with-hpa
 spec:
   components:
     - name: jupyterhub-component-with-hpa

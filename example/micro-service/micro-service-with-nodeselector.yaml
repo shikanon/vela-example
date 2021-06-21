@@ -1,10 +1,10 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: jupyterhub-component-with-ingressgateway
+  name: jupyterhub-component-with-node-selector
 spec:
   components:
-    - name: jupyterhub-component-with-ingressgateway
+    - name: jupyterhub-component-with-node-selector
       type: micro-service
       properties:
         image: jupyterhub/jupyterhub-demo:1.4
@@ -23,8 +23,7 @@ spec:
           type: "configMap"
           cmName: "jupyterhub-component-config"
       traits:
-      - type: ingressgateway
+      - type: node-selector
         properties:
-          gateway: "internal-gateway"
-          hosts: ["persona-query.cn-bj.rcmd-testing.skyengine.net.cn"]
-          exportport: 8000
+          dev-groups: 
+            - "rcmd"
