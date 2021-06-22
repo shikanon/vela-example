@@ -129,7 +129,7 @@ spec:
                   }}]
               }
 
-              if strings.Contains(parameter.image, "swr.cn-north-4.myhuaweicloud.com") {
+              if strings.Contains(parameter.image, "myhuaweicloud.com") {
                 imagePullSecrets: [{
                   name: "default-secret"
                 }]
