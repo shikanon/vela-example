@@ -1,0 +1,32 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: jupyterhub
+  namespace: default
+spec:
+  components:
+    - name: jupyterhub-component
+      type: distributed-app
+      properties:
+        image: jupyterhub/jupyterhub-demo:1.4
+        cmd: 
+          - jupyterhub
+          - --port=$(EXPORTPORT)
+        env:
+        - name: "EXPORTPORT"
+          value: "8888"
+        port:
+        - protocol: "http"
+          number: 8888
+        volumes:
+        - name: "jupyterhub-component-config"
+          mountPath: "/home/work/bin/abtestdata/"
+          type: "configMap"
+          cmName: "jupyterhub-component-config"
+        volumeClaim:
+        - name:   "jupyter-test-pvc"
+          pvc:    "ssd"
+          size:   1
+          region: "cn-north-4"
+          zone:   "a"
+

@@ -47,8 +47,10 @@ spec:
         parameter: {
           gateway: string
           hosts: [...string]
+          // +usage=the service to export port in all ports
           exportport: int
           protocol: *"http" | string
+          // +usage=If set "tcp", must to set gatewayport
           gatewayport?: *80 | int
         }
 
