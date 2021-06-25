@@ -1,0 +1,73 @@
+apiVersion: core.oam.dev/v1beta1
+kind: ComponentDefinition
+metadata:
+  name: external-resource
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "external-resource is services which is external resource of access map in the cluster, use serivce as DNS resolution"
+spec:
+  workload:
+    definition:
+      apiVersion: v1
+      kind: Service
+  schematic:
+    cue:
+      template: |
+        output: {
+            apiVersion: "v1"
+            kind:       "Service"
+            metadata: {
+                name: context.name
+            }
+            spec: {
+                if parameter.dnstype == "A" {
+                    type: "ClusterIP"
+                    ports: [ for p in parameter.ports {
+                        port: p
+                        targetPort: p
+                        protocol: parameter.protocol
+                    }]
+                }
+                if parameter.dnstype == "CNAME" {
+                    type: "ExternalName"
+                    externalName: parameter.cname
+                }
+            }
+        }
+
+        outputs: {
+            if parameter.dnstype == "A" {
+                endpoints: {
+                    apiVersion: "V1"
+                    kind: "Endpoints"
+                    metadata: {
+                        name: context.name
+                    }
+                    subsets: [
+                        {
+                            addresses: [ for i in parameter.ips {
+                                ip: i
+                            }]
+                            ports: [ for p in parameter.ports {
+                                port: p
+                                protocol: parameter.protocol
+                            }]
+                        }
+                    ]
+                }
+            }
+        }
+
+        parameter: {
+            // +usage=DNS resolution type, only support "A" and "CNAME"
+            dnstype: "A" | "CNAME"
+            if dnstype == "A" {
+                ips: [...string]
+                ports: [...int]
+                protocol: *"TCP" | "UDP"
+            }
+            if dnstype == "CNAME" {
+                // +usage=cname value, like xxx.com
+                cname: string
+            }
+        }

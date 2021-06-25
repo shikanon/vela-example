@@ -1,0 +1,13 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: test-external-resource-a
+  namespace: default
+spec:
+  components:
+    - name: dns-a
+      type: external-resource
+      properties:
+        dnstype: "A"
+        ips: ["10.213.60.50"]
+        ports: [6379]

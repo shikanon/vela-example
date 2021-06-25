@@ -1,0 +1,12 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: test-external-resource-cname
+  namespace: default
+spec:
+  components:
+    - name: dns-cname
+      type: external-resource
+      properties:
+        dnstype: "CNAME"
+        cname: "135805c107014b9f9bfc7d86287b38d0in01.internal.cn-north-4.mysql.rds.myhuaweicloud.com"
