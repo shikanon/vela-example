@@ -23,7 +23,7 @@ output: {
 outputs: {
     if parameter.dnstype == "A" {
         endpoints: {
-            apiVersion: "V1"
+            apiVersion: "v1"
             kind: "Endpoints"
             metadata: {
                 name: context.name
