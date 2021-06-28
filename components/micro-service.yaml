@@ -10,6 +10,9 @@ spec:
     definition:
       apiVersion: apps/v1
       kind: Deployment
+  status:
+    healthPolicy: |
+      isHealth: (context.output.status.readyReplicas > 0) && (context.output.status.readyReplicas == context.output.status.replicas)
   schematic:
     cue:
       template: |

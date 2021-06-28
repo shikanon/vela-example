@@ -7,6 +7,9 @@ metadata:
 spec:
   appliesToWorkloads:
     - deployments.apps
+  status:
+    healthPolicy: |
+      isHealth: (context.outputs.huaweihpa.status.desiredReplicas == context.outputs.huaweihpa.status.currentReplicas)
   schematic:
     cue:
       template: |

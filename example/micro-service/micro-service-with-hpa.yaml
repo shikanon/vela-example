@@ -14,6 +14,8 @@ spec:
         env:
         - name: "EXPORTPORT"
           value: "8888"
+        cpu: "100m"
+        memory: "200Mi"
         port:
         - protocol: "http"
           number: 8888
