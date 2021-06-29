@@ -3,6 +3,8 @@ kind: TraitDefinition
 metadata:
   name: node-selector
   namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment node affinity easy"
 spec:
   appliesToWorkloads:
     - deployments.apps

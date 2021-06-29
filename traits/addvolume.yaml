@@ -3,6 +3,8 @@ kind: TraitDefinition
 metadata:
   name: addvolume
   namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "add volume which huawei cloud provider pvc type, is only support micro-service"
 spec:
   appliesToWorkloads:
     - deployments.apps

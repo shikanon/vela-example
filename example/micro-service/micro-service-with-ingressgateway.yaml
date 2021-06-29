@@ -25,6 +25,6 @@ spec:
       traits:
       - type: ingressgateway
         properties:
-          gateway: "internal-gateway"
+          gateway: "istio-system/internal-gateway"
           hosts: ["persona-query.cn-bj.rcmd-testing.skyengine.net.cn"]
           exportport: 8000

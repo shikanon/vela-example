@@ -4,6 +4,8 @@ kind: TraitDefinition
 metadata:
   name: ingressgateway
   namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "ingressgateway is a istio route rule, help external application access cluster application"
 spec:
   appliesToWorkloads:
     - deployments.apps

@@ -4,6 +4,8 @@ kind: TraitDefinition
 metadata:
   name: scale-hpa
   namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "hpa for deployment of huawei cloud"
 spec:
   appliesToWorkloads:
     - deployments.apps

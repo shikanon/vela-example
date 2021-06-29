@@ -25,6 +25,7 @@ spec:
           }
           spec: {
             selector: matchLabels: {
+              "app": context.appName
               "app.oam.dev/component": context.name
               "workload.oam.dev/type": "micro-service"
               "app.kubernetes.io/instance": context.name
@@ -36,6 +37,7 @@ spec:
         
             template: {
               metadata: labels: {
+                "app": context.appName
                 "app.oam.dev/component": context.name
                 "workload.oam.dev/type": "micro-service"
                 "app.kubernetes.io/instance": context.name
