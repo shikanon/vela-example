@@ -214,6 +214,7 @@ spec:
             "app.oam.dev/component": context.name
             "workload.oam.dev/type": "micro-service"
           }
+          clusterIP: "None"
           ports: [
             for p in parameter.port {
               port:       p.number
