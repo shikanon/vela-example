@@ -1,0 +1,28 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: jupyterhub-component-with-health-checker
+spec:
+  components:
+    - name: jupyterhub-component-with-health-checker
+      type: micro-service
+      properties:
+        image: jupyterhub/jupyterhub-demo:1.4
+        cmd: 
+          - jupyterhub
+          - --port=$(EXPORTPORT)
+        env:
+        - name: "EXPORTPORT"
+          value: "8888"
+        port:
+        - protocol: "http"
+          number: 8888
+      traits:
+      - type: health-checker
+        properties:
+          type: "http"
+          httpPath: "/hub/login"
+          port: 8888
+          initCheckTime: 3
+          initFailedTime: 15
+          interval: 3

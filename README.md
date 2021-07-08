@@ -32,6 +32,7 @@ helm install -n vela-system kubevela charts/vela-core
 - nodeAffinity: 用于设置节点的亲和性，可以将指定的应用分配到对于的节点上，通过对 deployment 打 patch 实现。
 - addvolume: 用于给应用添加外部挂载存储（只适配华为云），提供了ssd,nas,obs等存储资源对象，通过封装 PVC 对象实现。
 - hpa: 用于做水平伸缩容的（只适配华为云）,提供基于cpu,memory伸缩容，同时可以控制扩缩容的时间，封装了 HPA 对象。
+- healthChecker: 用于应用的健康检查，支持tcp, http, grpc和自定义放松。
 
 ## Cue debug
 
