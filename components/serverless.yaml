@@ -22,6 +22,7 @@ spec:
           }
           spec: {
             selector: matchLabels: {
+              "app": context.name
               "app.oam.dev/component": context.name
               "app.kubernetes.io/instance": context.name
               "app.kubernetes.io/name": context.name
@@ -32,6 +33,7 @@ spec:
         
             template: {
               metadata: labels: {
+                "app": context.name
                 "app.oam.dev/component": context.name
                 "app.kubernetes.io/instance": context.name
                 "app.kubernetes.io/name": context.name
