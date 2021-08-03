@@ -10,9 +10,6 @@ spec:
     definition:
       apiVersion: v1
       kind: Service
-  status:
-    healthPolicy: |
-      isHealth: (context.output.status.readyReplicas > 0) && (context.output.status.readyReplicas == context.output.status.replicas)
   schematic:
     cue:
       template: |

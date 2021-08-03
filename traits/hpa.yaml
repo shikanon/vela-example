@@ -5,20 +5,20 @@ metadata:
   name: scale-hpa
   namespace: vela-system
   annotations:
-    definition.oam.dev/description: "hpa for deployment of huawei cloud"
+    definition.oam.dev/description: "hpa for deployment for v2beta2"
 spec:
   appliesToWorkloads:
     - deployments.apps
   status:
     healthPolicy: |
-      isHealth: (context.outputs.huaweihpa.status.desiredReplicas == context.outputs.huaweihpa.status.currentReplicas)
+      isHealth: (context.outputs.hpa.status.desiredReplicas == context.outputs.hpa.status.currentReplicas)
   schematic:
     cue:
       template: |
         import "encoding/json"
 
-        outputs: huaweihpa: {
-          apiVersion: "autoscaling/v1"
+        outputs: hpa: {
+          apiVersion: "autoscaling/v2beta2"
           kind:       "HorizontalPodAutoscaler"
           metadata: {
             name: context.name
@@ -29,7 +29,6 @@ spec:
               if parameter["memoryPercent"] != _|_{
                   "autoscaling.alpha.kubernetes.io/metrics": "[\(json.Marshal(memory_metrics))]"
               }
-              "extendedhpa.option": "[\(json.Marshal(huawei_extendhpa))]"
             }
           }
           spec: {
@@ -52,10 +51,7 @@ spec:
               "targetAverageUtilization": *60 | parameter.memoryPercent
               }
             }
-        huawei_extendhpa = {
-            "downscaleWindow": *"30m" | parameter.downscaleWindow,
-            "upscaleWindow": *"5m" | parameter.upscaleWindow
-          }
+
         parameter: {
           // +usage=How smallest the replica of your application
           min:             *1 | >=1 & int
@@ -65,7 +61,5 @@ spec:
           cpuPercent?:      >0 & int & < 100
           // +usage=Expect the percent of memory when your application run in k8s
           memoryPercent?:   >0 & int & < 100
-          downscaleWindow?: string
-          upscaleWindow?: string
         }
 

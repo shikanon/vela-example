@@ -51,6 +51,7 @@ spec:
                 containers: [{
                   name:  context.name
                   image: parameter.image
+                  imagePullPolicy: "Always"
                   ports: [
                     for p in parameter.port {
                       containerPort: p.number
