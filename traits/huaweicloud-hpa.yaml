@@ -29,7 +29,7 @@ spec:
               if parameter["memoryPercent"] != _|_{
                   "autoscaling.alpha.kubernetes.io/metrics": "[\(json.Marshal(memory_metrics))]"
               }
-              "extendedhpa.option": "[\(json.Marshal(huawei_extendhpa))]"
+              "extendedhpa.option": "\(json.Marshal(huawei_extendhpa))"
             }
           }
           spec: {
