@@ -142,6 +142,7 @@ spec:
             }
           }
 
+        if parameter["volumeClaim"] != _|_ {
           volumeClaimTemplates: [{
             for v in parameter.volumeClaim {
               apiVersion: "v1"
@@ -191,6 +192,7 @@ spec:
               }
             }
           }]
+        }
 
         if parameter.updatePartition != _|_ {
           updateStrategy: {

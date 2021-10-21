@@ -124,56 +124,57 @@ output: {
 			}
 		}
 	}
-
-	volumeClaimTemplates: [{
-		for v in parameter.volumeClaim {
-			apiVersion: "v1"
-			kind:       "PersistentVolumeClaim"
-			metadata: {
-				name:      v.name
-				namespace: context.namespace
-				annotations: {
-					if v.pvc == "ssd" {
-						"everest.io/disk-volume-type": "SSD"
+	if parameter["volumeClaim"] != _|_ {
+		volumeClaimTemplates: [{
+			for v in parameter.volumeClaim {
+				apiVersion: "v1"
+				kind:       "PersistentVolumeClaim"
+				metadata: {
+					name:      v.name
+					namespace: context.namespace
+					annotations: {
+						if v.pvc == "ssd" {
+							"everest.io/disk-volume-type": "SSD"
+						}
+						if v.pvc == "sas" {
+							"everest.io/disk-volume-type": "SAS"
+						}
+						if v.pvc == "obs" {
+							"everest.io/obs-volume-type": "STANDARD"
+							"csi.storage.k8s.io/fstype":  "obsfs"
+						}
 					}
-					if v.pvc == "sas" {
-						"everest.io/disk-volume-type": "SAS"
+					if v.pvc == "ssd" || v.pvc == "sas" {
+						labels: {
+							"failure-domain.beta.kubernetes.io/region": v.region
+							"failure-domain.beta.kubernetes.io/zone":   "\(v.region)\(v.zone)"
+						}
+					}
+
+				}
+				spec: {
+					if v.pvc == "ssd" || v.pvc == "sas" {
+						accessModes: ["ReadWriteOnce"]
+					}
+					if v.pvc == "nas" || v.pvc == "obs" {
+						accessModes: ["ReadWriteMany"]
+					}
+					if v.pvc == "ssd" || v.pvc == "sas" {
+						storageClassName: "csi-disk"
+					}
+					if v.pvc == "nas" {
+						storageClassName: "csi-nas"
 					}
 					if v.pvc == "obs" {
-						"everest.io/obs-volume-type": "STANDARD"
-						"csi.storage.k8s.io/fstype":  "obsfs"
+						storageClassName: "csi-obs"
 					}
+					resources:
+						requests:
+							storage: "\(v.size)Gi"
 				}
-				if v.pvc == "ssd" || v.pvc == "sas" {
-					labels: {
-						"failure-domain.beta.kubernetes.io/region": v.region
-						"failure-domain.beta.kubernetes.io/zone":   "\(v.region)\(v.zone)"
-					}
-				}
-
 			}
-			spec: {
-				if v.pvc == "ssd" || v.pvc == "sas" {
-					accessModes: ["ReadWriteOnce"]
-				}
-				if v.pvc == "nas" || v.pvc == "obs" {
-					accessModes: ["ReadWriteMany"]
-				}
-				if v.pvc == "ssd" || v.pvc == "sas" {
-					storageClassName: "csi-disk"
-				}
-				if v.pvc == "nas" {
-					storageClassName: "csi-nas"
-				}
-				if v.pvc == "obs" {
-					storageClassName: "csi-obs"
-				}
-				resources:
-					requests:
-						storage: "\(v.size)Gi"
-			}
-		}
-	}]
+		}]
+	}
 
 if parameter.updatePartition != _|_ {
 	updateStrategy: {
@@ -293,35 +294,35 @@ updatePartition?: 0 | int
 }
 
 context: {
-name:      "test-distributed-app"
-namespace: "default"
+	name:      "test-distributed-app"
+	namespace: "default"
 }
 
 parameter: {
-image: "jupyterhub-component-with-statefulset"
-cmd: ["jupyterhub", "--port=8888"]
-env: [{
-	name:  "EXPORTPORT"
-	value: "8888"
-}]
-port: [{
-	protocol: "http"
-	number:   8888
-}]
+	image: "jupyterhub-component-with-statefulset"
+	cmd: ["jupyterhub", "--port=8888"]
+	env: [{
+		name:  "EXPORTPORT"
+		value: "8888"
+	}]
+	port: [{
+		protocol: "http"
+		number:   8888
+	}]
 
-volumes: [{
-	name:      "jupyter-test-pvc"
-	mountPath: "/home/data"
-	type:      "pvc"
-	claimName: "jupyter-test-pvc"
-}]
+	volumes: [{
+		name:      "jupyter-test-pvc"
+		mountPath: "/home/data"
+		type:      "pvc"
+		claimName: "jupyter-test-pvc"
+	}]
 
-volumeClaim: [{
-	name:   "jupyter-test-pvc"
-	pvc:    "ssd"
-	size:   1
-	region: "cn-north-4"
-	zone:   "a"
-}]
+	volumeClaim: [{
+		name:   "jupyter-test-pvc"
+		pvc:    "ssd"
+		size:   1
+		region: "cn-north-4"
+		zone:   "a"
+	}]
 
 }
