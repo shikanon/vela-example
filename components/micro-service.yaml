@@ -55,8 +55,13 @@ spec:
                   ports: [
                     for p in parameter.port {
                       containerPort: p.number
-                      protocol: "TCP"
                       name: "\(p.protocol)-\(p.number)"
+                      if p.protocol == "udp"{
+                        protocol: "UDP"
+                      }
+                      if p.protocol != "udp"{
+                        protocol: "TCP"
+                      }
                     },
                   ]
         
@@ -160,7 +165,12 @@ spec:
                 port:       p.number
                 targetPort: p.number
                 name:       "\(p.protocol)-\(p.number)"
-                protocol:   "TCP"
+                if p.protocol == "udp"{
+                  protocol: "UDP"
+                }
+                if p.protocol != "udp"{
+                  protocol: "TCP"
+                }
               },
             ]
           }
