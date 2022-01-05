@@ -15,10 +15,12 @@ spec:
         patch: {
           spec: template: metadata: annotations:{
             "prometheus.io/port": "\(parameter.port)"
+            "prometheus.io/path": "\(parameter.path)"
             "prometheus.io/scrape": "true"
           }
         }
 
         parameter: {
           port: int
+          path: *"/metrics" | string
         }
