@@ -34,7 +34,6 @@ spec:
                 "app.oam.dev/appRevision": context.appRevision
               }
             }
-        
             template: {
               metadata: labels: {
                 "app": context.appName
@@ -181,7 +180,7 @@ spec:
           image: string
         
           // +usage=Specify the exposion ports
-          port: [...{
+          port: *[{number: 80, protocol: "tcp"}]|[...{
             // +usage=The port value
             number: int
             // +usage=The port protocol
