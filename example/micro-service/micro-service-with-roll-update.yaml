@@ -27,3 +27,8 @@ spec:
           mountPath: "/home/work/bin/abtestdata/"
           type: "configMap"
           cmName: "jupyterhub-component-config"
+      traits:
+      - type: roll-update
+        properties:
+          maxSurge: 30%
+          maxUnavailable: 5%
