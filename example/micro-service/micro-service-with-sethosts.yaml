@@ -1,0 +1,35 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: jupyterhub-component-sethosts
+  namespace: default
+spec:
+  components:
+    - name: jupyterhub-component-sethosts
+      type: micro-service
+      properties:
+        image: jupyterhub/jupyterhub-demo:1.4
+        cmd: 
+          - jupyterhub
+          - --port=$(EXPORTPORT)
+        env:
+        - name: "EXPORTPORT"
+          value: "8888"
+        - name: "SERVICE_NAME"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        port:
+        - protocol: "http"
+          number: 8888
+        volumes:
+        - name: "jupyterhub-component-config"
+          mountPath: "/home/work/bin/abtestdata/"
+          type: "configMap"
+          cmName: "jupyterhub-component-config"
+      traits:
+      - type: set-hosts
+        properties:
+          hosts: 
+          - hostnames: ["kafka-2.kafka-headless.middleware.svc.cluster.local"]
+            ip: "10.112.110.126"
