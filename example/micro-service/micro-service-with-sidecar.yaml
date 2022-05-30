@@ -1,0 +1,39 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: jupyterhub-component-sidecar
+  namespace: default
+spec:
+  components:
+    - name: jupyterhub-component-sidecar
+      type: micro-service
+      properties:
+        image: jupyterhub/jupyterhub-demo:1.4
+        cmd: 
+          - jupyterhub
+          - --port=$(EXPORTPORT)
+        env:
+        - name: "EXPORTPORT"
+          value: "8888"
+        - name: "SERVICE_NAME"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        port:
+        - protocol: "http"
+          number: 8888
+        volumes:
+        - name: "jupyterhub-component-config"
+          mountPath: "/home/work/bin/abtestdata/"
+          type: "configMap"
+          cmName: "jupyterhub-component-config"
+      traits:
+      - type: inject-sidecar
+        properties:
+          name: "sidecar-test"
+          image: "registry.cn-guangzhou.aliyuncs.com/shikanon/hexo-website:v0.1"
+          cmd:
+          - /home/node_modules/hexo/bin/hexo
+          - server
+          - -p
+          - "8000"
