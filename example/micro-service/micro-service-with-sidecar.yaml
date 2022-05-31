@@ -36,4 +36,7 @@ spec:
           - /home/node_modules/hexo/bin/hexo
           - server
           - -p
-          - "8000"
+          - "$(EXPORTPORT)"
+          env:
+          - name: "EXPORTPORT"
+            value: "8000"
