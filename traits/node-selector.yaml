@@ -1,0 +1,30 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: node-selector
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment node affinity easy"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: template: spec: {
+            affinity: nodeAffinity: requiredDuringSchedulingIgnoredDuringExecution: nodeSelectorTerms: [{
+                  matchExpressions: [
+                      for k, v in parameter {
+                          key:      k
+                          operator: "In"
+                          values:   v
+                      },
+                  ]}]
+          }
+        }
+
+        parameter: {
+            [string]: [...string]
+        }

@@ -2,68 +2,86 @@ outputs: pvc: {
 	apiVersion: "v1"
 	kind:       "PersistentVolumeClaim"
 	metadata: {
-		name:      parameter.name
-		namespace: context.namespace
+	name:      parameter.name
+	namespace: context.namespace
+	if parameter.cloud == "huawei" {
 		annotations: {
-			if parameter.pvc == "ssd" {
-				"everest.io/disk-volume-type": "SSD"
-			}
-			if parameter.pvc == "sas" {
-				"everest.io/disk-volume-type": "SAS"
-			}
-			if parameter.pvc == "obs" {
-				"everest.io/obs-volume-type": "STANDARD"
-				"csi.storage.k8s.io/fstype":  "obsfs"
-			}
+		if parameter.pvc == "ssd" {
+			"everest.io/disk-volume-type": "SSD"
 		}
-		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
-			labels: {
-				"failure-domain.beta.kubernetes.io/region": parameter.region
-				"failure-domain.beta.kubernetes.io/zone":   "\(parameter.region)\(parameter.zone)"
-			}
-		}
-
-	}
-	spec: {
-		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
-			accessModes: ["ReadWriteOnce"]
-		}
-		if parameter.pvc == "nas" || parameter.pvc == "obs" {
-			accessModes: ["ReadWriteMany"]
-		}
-		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
-			storageClassName: "csi-disk"
-		}
-		if parameter.pvc == "nas" {
-			storageClassName: "csi-nas"
+		if parameter.pvc == "sas" {
+			"everest.io/disk-volume-type": "SAS"
 		}
 		if parameter.pvc == "obs" {
-			storageClassName: "csi-obs"
+			"everest.io/obs-volume-type": "STANDARD"
+			"csi.storage.k8s.io/fstype":  "obsfs"
 		}
-		resources:
-			requests:
-				storage: "\(parameter.size)Gi"
+		}
+		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
+		labels: {
+			"failure-domain.beta.kubernetes.io/region": parameter.region
+			"failure-domain.beta.kubernetes.io/zone":   "\(parameter.region)\(parameter.zone)"
+		}
+		}
+	}
+	}
+	spec: {
+	if parameter.cloud == "huawei" {
+		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
+		accessModes: ["ReadWriteOnce"]
+		}
+		if parameter.pvc == "nas" || parameter.pvc == "obs" {
+		accessModes: ["ReadWriteMany"]
+		}
+		if parameter.pvc == "ssd" || parameter.pvc == "sas" {
+		storageClassName: "csi-disk"
+		}
+		if parameter.pvc == "nas" {
+		storageClassName: "csi-nas"
+		}
+		if parameter.pvc == "obs" {
+		storageClassName: "csi-obs"
+		}
+	}
+	if parameter.cloud == "default" {
+		storageClassName: parameter.storage
+		accessModes: parameter.accessModes
+	}
+	resources:
+		requests:
+		storage: "\(parameter.size)Gi"
 	}
 }
 
 parameter: {
 	// +usage=the name created pvc 
 	name: string
+	// +usage=cloud provider pvc type
+	cloud: *"default" | "huawei"
+	if cloud == "huawei" {
 	// +usage=the type of pvc in huawei cloud, only "nas", "obs", "ssd", "sas"
-	pvc: *"obs" | "nas" | "ssd" | "sas"
-	// +usage=the storage size, unit is Gi, size=10 mean size is 10Gi
-	size: *5 | int
+	pvc: *"obs" | "nas" | "ssd" | "sas" 
 	// +usage=regine and zone when the disk created which must mount the node, like "ssd" and "sas"
 	region?: string
 	zone?:   string
+	}
+	// if use default, you can use cumstom the storageClassName
+	if cloud == "default" {
+	// +usage=the field of storageClassName
+	storage: string
+	// +usage=the storageClassName support accessModes, ReadWriteOnce or ReadWriteMany
+	accessModes:  [...string]
+	}
+	// +usage=the storage size, unit is Gi, size=10 mean size is 10Gi
+	size: *5 | int
 }
 
 parameter: {
 	name:   "testpvc"
-	pvc:    "ssd"
+	cloud:  "default"
+	storage:    "ebs-sc"
 	size:   10
-	region: "cn-north-4"
-	zone:   "a"
+	accessModes: "ReadWriteOnce"
 }
 
 context: {

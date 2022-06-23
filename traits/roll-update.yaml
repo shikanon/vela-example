@@ -1,0 +1,29 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: roll-update
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment rolling update strategy"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: strategy: {
+            rollingUpdate:{
+              maxSurge: parameter.maxSurge
+              maxUnavailable: parameter.maxUnavailable
+            }
+            type: "RollingUpdate"
+          }
+        }
+
+
+        parameter: {
+            maxSurge?: *"20%" | string
+            maxUnavailable?: *"5" | string
+        }

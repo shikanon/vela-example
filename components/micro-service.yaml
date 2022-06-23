@@ -34,7 +34,6 @@ spec:
                 "app.oam.dev/appRevision": context.appRevision
               }
             }
-        
             template: {
               metadata: labels: {
                 "app": context.appName
@@ -51,11 +50,17 @@ spec:
                 containers: [{
                   name:  context.name
                   image: parameter.image
+                  imagePullPolicy: "Always"
                   ports: [
                     for p in parameter.port {
                       containerPort: p.number
-                      protocol: "TCP"
                       name: "\(p.protocol)-\(p.number)"
+                      if p.protocol == "udp"{
+                        protocol: "UDP"
+                      }
+                      if p.protocol != "udp"{
+                        protocol: "TCP"
+                      }
                     },
                   ]
         
@@ -159,7 +164,12 @@ spec:
                 port:       p.number
                 targetPort: p.number
                 name:       "\(p.protocol)-\(p.number)"
-                protocol:   "TCP"
+                if p.protocol == "udp"{
+                  protocol: "UDP"
+                }
+                if p.protocol != "udp"{
+                  protocol: "TCP"
+                }
               },
             ]
           }
@@ -170,7 +180,7 @@ spec:
           image: string
         
           // +usage=Specify the exposion ports
-          port: [...{
+          port: *[{number: 80, protocol: "tcp"}]|[...{
             // +usage=The port value
             number: int
             // +usage=The port protocol

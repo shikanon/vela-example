@@ -1,0 +1,32 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: pod-anti-node
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment pod anti-affinity by hostname"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: template: spec: {
+            affinity: podAntiAffinity: requiredDuringSchedulingIgnoredDuringExecution: [{
+                  labelSelector: {
+                    matchExpressions: [{
+                      key: "\(parameter.label)"
+                      operator: "In"
+                      values: [context.appName]
+                    }]
+                  }
+                  topologyKey: "kubernetes.io/hostname"
+                  }]
+          }
+        }
+
+        parameter: {
+          label: *"app" | string
+        }

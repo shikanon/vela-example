@@ -1,20 +1,7 @@
-apiVersion: core.oam.dev/v1beta1
-kind: TraitDefinition
-metadata:
-  name: node-affinity
-  namespace: vela-system
-  annotations:
-    definition.oam.dev/description: "the patch of deployment node affinity"
-spec:
-  appliesToWorkloads:
-    - deployments.apps
-  podDisruptive: true
-  schematic:
-    cue:
-      template: |
-        patch: {
-          spec: template: spec: {
-              affinity: nodeAffinity: {
+spec: 
+    template: 
+        spec: {
+            affinity: nodeAffinity: {
               if parameter["requiredLabel"] != _|_ {
                 requiredDuringSchedulingIgnoredDuringExecution: nodeSelectorTerms: [{
                     matchExpressions: [
@@ -43,17 +30,29 @@ spec:
                 ]
               }
             }
-          }
         }
 
-        parameter: {
-            requiredLabel?:[...{
-              key: string
-              values: [...string]
-            }]
-            preferredLabel?:[...{
-              key: string
-              values: [...string]
-              weight: *1 | int
-            }]
-        }
+parameter: {
+    requiredLabel?:[...{
+        key: string
+        values: [...string]
+    }]
+    preferredLabel?:[...{
+        key: string
+        values: [...string]
+        weight: *1 | int
+    }]
+}
+
+parameter: {
+    requiredLabel: [{
+        key: "dev-groups"
+        values: ["rcmd"]
+    }
+    ]
+    preferredLabel: [{
+        key: "dev-groups-external"
+        values: ["media"]
+    }
+    ]
+}

@@ -1,11 +1,10 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: jupyterhub
-  namespace: default
+  name: jupyterhub-component-with-node-selector
 spec:
   components:
-    - name: jupyterhub-component
+    - name: jupyterhub-component-with-node-selector
       type: micro-service
       properties:
         image: jupyterhub/jupyterhub-demo:1.4
@@ -15,10 +14,6 @@ spec:
         env:
         - name: "EXPORTPORT"
           value: "8888"
-        - name: "SERVICE_NAME"
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         port:
         - protocol: "http"
           number: 8888
@@ -27,3 +22,13 @@ spec:
           mountPath: "/home/work/bin/abtestdata/"
           type: "configMap"
           cmName: "jupyterhub-component-config"
+      traits:
+      - properties:
+          requiredLabel: 
+            - key: "dev-groups"
+              values: ["rcmd"]
+          preferredLabel: 
+            - key: "dev-groups-external"
+              values: ["media"]
+              weight: 1
+        type: node-affinity

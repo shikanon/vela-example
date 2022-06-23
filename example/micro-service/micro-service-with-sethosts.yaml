@@ -1,11 +1,11 @@
 apiVersion: core.oam.dev/v1beta1
 kind: Application
 metadata:
-  name: jupyterhub
+  name: jupyterhub-component-sethosts
   namespace: default
 spec:
   components:
-    - name: jupyterhub-component
+    - name: jupyterhub-component-sethosts
       type: micro-service
       properties:
         image: jupyterhub/jupyterhub-demo:1.4
@@ -27,3 +27,9 @@ spec:
           mountPath: "/home/work/bin/abtestdata/"
           type: "configMap"
           cmName: "jupyterhub-component-config"
+      traits:
+      - type: set-hosts
+        properties:
+          hosts: 
+          - hostnames: ["kafka-2.kafka-headless.middleware.svc.cluster.local"]
+            ip: "10.112.110.126"

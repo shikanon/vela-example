@@ -1,0 +1,28 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: set-hosts
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "set host for deployment"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: template: spec: {
+              if parameter["hosts"] != _|_{
+                hostAliases: parameter["hosts"]
+              }
+            }
+        }
+
+        parameter: {
+            hosts?:[...{
+              hostnames: [...string]
+              ip: string
+            }]
+        }

@@ -1,0 +1,26 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: monitor-port
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment pod monitor by promethues"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: template: metadata: annotations:{
+            "prometheus.io/port": "\(parameter.port)"
+            "prometheus.io/path": "\(parameter.path)"
+            "prometheus.io/scrape": "true"
+          }
+        }
+
+        parameter: {
+          port: int
+          path: *"/metrics" | string
+        }
