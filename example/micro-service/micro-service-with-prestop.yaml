@@ -1,0 +1,21 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: nginx-prestop
+  namespace: default
+spec:
+  components:
+    - name: nginx-lifecycle
+      type: micro-service
+      properties:
+        image: nginx
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
+          preStop:
+            exec:
+              command: ["/bin/sh","-c","nginx -s quit; while killall -0 nginx; do sleep 1; done"]
+        port:
+        - protocol: "http"
+          number: 80

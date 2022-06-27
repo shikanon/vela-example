@@ -67,9 +67,13 @@ spec:
                   if parameter["cmd"] != _|_ {
                     command: parameter.cmd
                   }
-        
+
                   if parameter["env"] != _|_ {
                     env: parameter.env
+                  }
+        
+                  if parameter["lifecycle"] != _|_ {
+                    lifecycle: parameter.lifecycle
                   }
         
                   if context["config"] != _|_ {
@@ -200,6 +204,18 @@ spec:
             // +usage=The value of the environment variable
             value?: string
           }]
+
+          // +usage=Define lifecycle of main pod
+          lifecycle?: {
+            // +usage=PostStart of pod
+            postStart?: {
+              exec: command: [...string]
+            }
+            // +usage=PreStop of pod
+            preStop?: {
+              exec: command: [...string]
+            }
+          }
         
           // +usage=Number of CPU units for the service, like `0.5` (0.5 CPU core), `1` (1 CPU core)
           cpu?: string
