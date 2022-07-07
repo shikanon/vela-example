@@ -36,6 +36,13 @@ helm install -n vela-system kubevela charts/vela-core
 - monitor-port：添加监控采集，需要集群有采集策略支持。
 - add-account: 添加用户账户。
 - set-hosts: 为workload设置hosts文件。
+- sidecar: 允许为workload添加一个sidecar。
+- roll-update: 设置滚动更新的参数
+- pod-anti-node: 用于做节点反亲和
+- node-selector: 用于调度到对应label的节点
+
+[使用例子](./example/micro-service)
+
 
 ## Cue debug
 
