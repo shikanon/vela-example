@@ -40,6 +40,7 @@ helm install -n vela-system kubevela charts/vela-core
 - roll-update: 设置滚动更新的参数
 - pod-anti-node: 用于做节点反亲和
 - node-selector: 用于调度到对应label的节点
+- istio-sidecar: 增加了istio官方支持的一些sidecar配置的label
 
 [使用例子](./example/micro-service)
 
