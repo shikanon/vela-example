@@ -1,0 +1,45 @@
+apiVersion: core.oam.dev/v1beta1
+kind: TraitDefinition
+metadata:
+  name: istio-sidecar
+  namespace: vela-system
+  annotations:
+    definition.oam.dev/description: "the patch of deployment pod monitor by promethues"
+spec:
+  appliesToWorkloads:
+    - deployments.apps
+  podDisruptive: true
+  schematic:
+    cue:
+      template: |
+        patch: {
+          spec: template: metadata: annotations:{
+            if parameter.inject != _|_ {
+                "sidecar.istio.io/inject": parameter.inject
+            }
+            if parameter.proxyCPU != _|_ {
+                "sidecar.istio.io/proxyCPU": parameter.proxyCPU
+            }
+            if parameter.proxyCPULimit != _|_ {
+                "sidecar.istio.io/proxyCPULimit": parameter.proxyCPULimit
+            }
+            if parameter.proxyMemory != _|_ {
+                "sidecar.istio.io/proxyMemory": parameter.proxyMemory
+            }
+            if parameter.proxyMemoryLimit != _|_ {
+                "sidecar.istio.io/proxyMemoryLimit": parameter.proxyMemoryLimit
+            }
+            if parameter.interceptionMode != _|_ {
+                "sidecar.istio.io/interceptionMode": parameter.interceptionMode
+            }
+          }
+        }
+
+        parameter: {         
+          inject?: string
+          proxyCPU?: string
+          proxyCPULimit?: string
+          proxyMemory?: string
+          proxyMemoryLimit?: string
+          interceptionMode?: "REDIRECT" | "TPROXY"
+        }
