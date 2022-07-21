@@ -38,7 +38,7 @@ spec:
 
                     initialDelaySeconds: parameter.initCheckTime + parameter.initFailedTime
                     periodSeconds: parameter.interval
-                    failureThreshold: 3
+                    failureThreshold: 12
                     successThreshold: 1
                     timeoutSeconds: 2
                 }
@@ -64,7 +64,7 @@ spec:
                         }
                     }
                     initialDelaySeconds: parameter.initCheckTime
-                    periodSeconds: parameter.initFailedTime div 3
+                    periodSeconds: parameter.interval
                     failureThreshold: 3
                     successThreshold: 1
                     timeoutSeconds: 2
